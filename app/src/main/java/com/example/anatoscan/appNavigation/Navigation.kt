@@ -6,11 +6,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.anatoscan.screens.CameraXPreview
+import com.example.anatoscan.screens.CapturedImage
 import com.example.anatoscan.screens.MainScreen
+import com.example.anatoscan.viewmodel.BitmapViewModel
 import com.example.anatoscan.viewmodel.CameraViewModel
 
 @Composable
-fun MyAppNavigation( modifier : Modifier,cameraViewModel: CameraViewModel){
+fun MyAppNavigation( modifier : Modifier,cameraViewModel: CameraViewModel, bitmapViewModel: BitmapViewModel){
 
            val navController = rememberNavController()
 
@@ -29,7 +31,14 @@ fun MyAppNavigation( modifier : Modifier,cameraViewModel: CameraViewModel){
 
         composable("cameraScreen"){
 
-            CameraXPreview(navController)
+            CameraXPreview(navController, bitmapViewModel)
+        }
+
+
+        composable("result"){
+
+            CapturedImage(navController,bitmapViewModel)
+
         }
     }
 

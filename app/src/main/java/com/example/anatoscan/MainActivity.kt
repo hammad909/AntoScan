@@ -12,10 +12,12 @@ import com.example.anatoscan.viewmodel.CameraViewModel
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.padding
 import com.example.anatoscan.appNavigation.MyAppNavigation
+import com.example.anatoscan.viewmodel.BitmapViewModel
 
 class MainActivity : ComponentActivity() {
 
     val cameraViewModel: CameraViewModel by viewModels()
+    val bitmapViewModel : BitmapViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,7 +31,8 @@ class MainActivity : ComponentActivity() {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     MyAppNavigation(
                         modifier = Modifier.padding(innerPadding),
-                           cameraViewModel
+                           cameraViewModel,
+                           bitmapViewModel
                     )
 
 
