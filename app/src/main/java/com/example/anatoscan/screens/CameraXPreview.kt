@@ -12,9 +12,6 @@ import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
@@ -25,13 +22,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.navigation.NavController
@@ -41,8 +36,6 @@ import com.example.anatoscan.viewmodel.BitmapViewModel
 @Composable
 fun CameraXPreview(navController: NavController, bitmapViewModel: BitmapViewModel) {
 
-
-
 /* context: Needed for camera and toast messages
  lifecycleOwner: Required to bind CameraX to the lifecycle of the screen*/
     val context = LocalContext.current
@@ -51,10 +44,6 @@ fun CameraXPreview(navController: NavController, bitmapViewModel: BitmapViewMode
    /* Creates the PreviewView for CameraX to show the live camera feed
     remember keeps it alive across recompositions*/
     val previewView = remember { PreviewView(context) }
-
-    /* Holds the captured image temporarily
-    If capturedBitmap is not null, it’s displayed below the preview*/
-    var capturedBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
 
     // State to hold the ImageCapture instance
