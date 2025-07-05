@@ -1,7 +1,6 @@
 package com.example.anatoscan.screens
 
 
-import android.graphics.Bitmap
 import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.camera.core.CameraSelector
@@ -13,14 +12,9 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -29,8 +23,15 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Icon
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavController
 import com.example.anatoscan.viewmodel.BitmapViewModel
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Camera
+import androidx.compose.material3.FloatingActionButton
+
 
 @OptIn(ExperimentalGetImage::class)
 @Composable
@@ -76,7 +77,7 @@ fun CameraXPreview(navController: NavController, bitmapViewModel: BitmapViewMode
         )
 
         // Button overlays the preview, aligned to bottom center
-        Button(
+        FloatingActionButton(
             onClick = {
                 imageCapture.takePicture(
                     ContextCompat.getMainExecutor(context),
@@ -94,12 +95,15 @@ fun CameraXPreview(navController: NavController, bitmapViewModel: BitmapViewMode
                     }
                 )
             },
+            containerColor = Color.White,
+            contentColor = Color(0xFF362246),
             modifier = Modifier
-                .align(androidx.compose.ui.Alignment.BottomCenter)
+                .align(Alignment.BottomCenter)
                 .padding(24.dp)
         ) {
-            Text("Capture")
+            Icon(Icons.Default.Camera, contentDescription = "Capture Image")
         }
+
     }
 
 }
