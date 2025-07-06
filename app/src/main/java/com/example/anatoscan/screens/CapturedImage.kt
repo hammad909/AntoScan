@@ -12,13 +12,15 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -34,12 +36,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.google.mediapipe.framework.image.BitmapImageBuilder
 import com.google.mediapipe.tasks.core.BaseOptions
 import com.google.mediapipe.tasks.vision.core.RunningMode
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarker
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarkerResult
+
 
 @Composable
 fun CapturedImage(
@@ -84,16 +89,21 @@ fun CapturedImage(
                     if (bitmap != null) {
                         analyzeHands(context, bitmap) { result ->
                             var message = "No hands detected"
-                            if (result != null && result.handedness().isNotEmpty()) {
-                                val handLabels = result.handedness().mapIndexed { index, hand ->
-                                    val side = hand[0].categoryName()  // "Left" or "Right"
-                                    "Hand ${index + 1}: $side"
+                            // Check if result is not null and has detected hands
+                            // IMPORTANT CHANGE: Use .handednesses() (plural)
+                            if (result != null && result.handednesses().isNotEmpty()) {
+                                val handLabels = result.handednesses().mapIndexed { index, handList -> //  handList is List<Category> for one hand
+                                    // Get the most confident category (Left/Right) for this hand
+                                    val side = handList.firstOrNull()?.categoryName()
+                                    if (side != null) "Hand ${index + 1}: $side" else "Hand ${index + 1}: Unknown"
                                 }
                                 message = "Detected ${handLabels.size} hand(s):\n" + handLabels.joinToString("\n")
                             }
                             detectionResult = message
                             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                         }
+                    } else {
+                        Toast.makeText(context, "No image to analyze!", Toast.LENGTH_SHORT).show()
                     }
                 },
                 modifier = Modifier
@@ -129,38 +139,24 @@ fun CapturedImage(
 }
 
 
-
-//Takes a bitmap image.
-//Uses MediaPipe + TensorFlow Lite (hand_landmarker.task model).
-//Detects up to 2 hands and their landmarks.
-//Returns the detection result to your UI via a callback onResult.
 fun analyzeHands(context: Context, bitmap: Bitmap, onResult: (HandLandmarkerResult?) -> Unit) {
-
-
-   //Creates a builder for configuring the HandLandmarker.
     val options = HandLandmarker.HandLandmarkerOptions.builder()
-
-
         .setBaseOptions(
             BaseOptions.builder()
                 .setModelAssetPath("hand_landmarker.task")
                 .build()
         )
-
-        //Sets the running mode to IMAGE, meaning the model will process static images (not video or real-time streams).
         .setRunningMode(RunningMode.IMAGE)
-        //Tells the model to detect up to 2 hands in the image.
         .setNumHands(2)
         .build()
 
-
-    //Creates the HandLandmarker instance using the provided options and context.
-    //This object is responsible for running hand landmark detection on images.
     val handLandmarker = HandLandmarker.createFromOptions(context, options)
-
     val mpImage = BitmapImageBuilder(bitmap).build()
     val result = handLandmarker.detect(mpImage)
 
     onResult(result)
 
+    handLandmarker.close()
 }
+
+

@@ -80,8 +80,7 @@ dependencies {
     implementation("com.google.mlkit:pose-detection:18.0.0-beta5")
     implementation("com.google.mlkit:pose-detection-accurate:18.0.0-beta5")
 
-    implementation ("com.google.mediapipe:tasks-vision:0.10.9")
-
+    implementation ("com.google.mediapipe:tasks-vision:0.20230731")
     implementation ("androidx.compose.material:material-icons-extended:1.7.8")
 
 }
