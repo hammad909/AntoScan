@@ -13,13 +13,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -44,6 +42,8 @@ import com.google.mediapipe.tasks.core.BaseOptions
 import com.google.mediapipe.tasks.vision.core.RunningMode
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarker
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarkerResult
+import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarker
+import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarkerResult
 
 
 @Composable
@@ -54,89 +54,141 @@ fun CapturedImage(
     val context = LocalContext.current
     val bitmap = bitmapViewModel.capturedBitmap
     var detectionResult by remember { mutableStateOf<String?>(null) }
+    var postureResult by remember { mutableStateOf<String?>(null) } // 🆕 For body pose status
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
-            bitmap?.let {
-                Image(
-                    bitmap = it.asImageBitmap(),
-                    contentDescription = "Captured Image",
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) {
+                bitmap?.let {
+                    Image(
+                        bitmap = it.asImageBitmap(),
+                        contentDescription = "Captured Image",
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+
+                IconButton(
+                    onClick = {
+                        bitmapViewModel.clearBitmap()
+                        navController.popBackStack()
+                    },
                     modifier = Modifier
-                        .weight(1f)
-                        .fillMaxSize()
-                )
+                        .align(Alignment.TopStart)
+                        .padding(16.dp)
+                        .size(48.dp)
+                        .background(Color.White.copy(alpha = 0.7f), shape = MaterialTheme.shapes.small)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowBack,
+                        contentDescription = "Back to Camera",
+                        tint = Color(0xFF362246)
+                    )
+                }
             }
 
-            detectionResult?.let { result ->
-                Text(
-                    text = result,
-                    modifier = Modifier.padding(16.dp)
-                )
-            }
-        }
-
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Analyze Button - full width and styled
-            Button(
-                onClick = {
-                    if (bitmap != null) {
-                        analyzeHands(context, bitmap) { result ->
-                            var message = "No hands detected"
-                            // Check if result is not null and has detected hands
-                            // IMPORTANT CHANGE: Use .handednesses() (plural)
-                            if (result != null && result.handednesses().isNotEmpty()) {
-                                val handLabels = result.handednesses().mapIndexed { index, handList -> //  handList is List<Category> for one hand
-                                    // Get the most confident category (Left/Right) for this hand
-                                    val side = handList.firstOrNull()?.categoryName()
-                                    if (side != null) "Hand ${index + 1}: $side" else "Hand ${index + 1}: Unknown"
-                                }
-                                message = "Detected ${handLabels.size} hand(s):\n" + handLabels.joinToString("\n")
-                            }
-                            detectionResult = message
-                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                        }
-                    } else {
-                        Toast.makeText(context, "No image to analyze!", Toast.LENGTH_SHORT).show()
-                    }
-                },
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF4B2E68),
-                    contentColor = Color.White
-                )
+                    .background(Color(0xFFF0F0F0))
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text("Analyze Hand")
+                Text(
+                    text = "Analysis Results",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF4B2E68),
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                detectionResult?.let {
+                    Text(
+                        text = it,
+                        fontSize = 16.sp,
+                        color = Color.Black,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
+                    )
+                }
+
+                postureResult?.let {
+                    Text(
+                        text = it,
+                        fontSize = 16.sp,
+                        color = Color(0xFF00695C),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
+                    )
+                }
             }
 
-            // Back Button - icon only
-            IconButton(
-                onClick = {
-                    bitmapViewModel.clearBitmap()
-                    navController.popBackStack()
-                },
+            // 🔁 ROW for Buttons
+            Row(
                 modifier = Modifier
-                    .size(48.dp)
-                    .background(Color.White, shape = MaterialTheme.shapes.small)
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBack,
-                    contentDescription = "Back to Camera",
-                    tint = Color(0xFF362246)
-                )
+                Button(
+                    onClick = {
+                        if (bitmap != null) {
+                            analyzeHands(context, bitmap) { result ->
+                                var message = "No hands detected"
+                                if (result != null && result.handednesses().isNotEmpty()) {
+                                    val handLabels = result.handednesses().mapIndexed { index, handList ->
+                                        val side = handList.firstOrNull()?.categoryName()
+                                        if (side != null) "Hand ${index + 1}: $side" else "Hand ${index + 1}: Unknown"
+                                    }
+                                    message = "Detected ${handLabels.size} hand(s):\n" + handLabels.joinToString("\n")
+                                }
+                                detectionResult = message
+                                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                            }
+                        } else {
+                            Toast.makeText(context, "No image to analyze!", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    modifier = Modifier.weight(1f).height(56.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF4B2E68),
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text("Analyze Hand", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                }
+
+                Button(
+                    onClick = {
+                        if (bitmap != null) {
+                            analyzePose(context, bitmap) { poseResult ->
+                                if (poseResult != null && poseResult.landmarks().isNotEmpty()) {
+                                    val poseLabel = estimatePosture(poseResult)
+                                    postureResult = "Posture: $poseLabel"
+                                } else {
+                                    postureResult = "No person detected"
+                                }
+                            }
+                        } else {
+                            Toast.makeText(context, "No image to analyze!", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    modifier = Modifier.weight(1f).height(56.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF00695C),
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text("Analyze Pose", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                }
             }
         }
-
     }
 }
+
 
 
 fun analyzeHands(context: Context, bitmap: Bitmap, onResult: (HandLandmarkerResult?) -> Unit) {
@@ -158,6 +210,86 @@ fun analyzeHands(context: Context, bitmap: Bitmap, onResult: (HandLandmarkerResu
 
     handLandmarker.close()
 
+}
+
+fun analyzePose(context: Context, bitmap: Bitmap, onResult: (PoseLandmarkerResult?) -> Unit) {
+    val options = PoseLandmarker.PoseLandmarkerOptions.builder()
+        .setBaseOptions(
+            BaseOptions.builder()
+                .setModelAssetPath("pose_landmarker_full.task")
+                .build()
+        )
+        .setRunningMode(RunningMode.IMAGE)
+        .setMinPoseDetectionConfidence(0.5f)
+        .setMinTrackingConfidence(0.5f)
+        .setMinPosePresenceConfidence(0.5f)
+        .build()
+
+    val poseLandmarker = PoseLandmarker.createFromOptions(context, options)
+    val mpImage = BitmapImageBuilder(bitmap).build()
+    val result = poseLandmarker.detect(mpImage)
+
+    onResult(result)
+
+    poseLandmarker.close()
+}
+
+fun estimatePosture(result: PoseLandmarkerResult): String {
+    val landmarks = result.landmarks().firstOrNull() ?: return "Unknown"
+
+    // Key landmark indices based on MediaPipe pose
+    val leftShoulder = landmarks.getOrNull(11)
+    val rightShoulder = landmarks.getOrNull(12)
+    val leftHip = landmarks.getOrNull(23)
+    val rightHip = landmarks.getOrNull(24)
+    val leftKnee = landmarks.getOrNull(25)
+    val rightKnee = landmarks.getOrNull(26)
+    val leftAnkle = landmarks.getOrNull(27)
+    val rightAnkle = landmarks.getOrNull(28)
+
+    if (listOf(
+            leftShoulder, rightShoulder,
+            leftHip, rightHip,
+            leftKnee, rightKnee,
+            leftAnkle, rightAnkle
+        ).any { it == null }) return "Unknown"
+
+    // Average keypoints for vertical estimation
+    val shoulderY = (leftShoulder!!.y() + rightShoulder!!.y()) / 2f
+    val hipY = (leftHip!!.y() + rightHip!!.y()) / 2f
+    val kneeY = (leftKnee!!.y() + rightKnee!!.y()) / 2f
+    val ankleY = (leftAnkle!!.y() + rightAnkle!!.y()) / 2f
+
+    // Vertical distances
+    val shoulderToHip = hipY - shoulderY
+    val hipToKnee = kneeY - hipY
+    val kneeToAnkle = ankleY - kneeY
+    val totalBodyHeight = ankleY - shoulderY
+
+    // Flat body detection (prone or lying)
+    val shoulderHipFlat = kotlin.math.abs(leftShoulder.y() - leftHip.y()) < 0.08f
+    val hipKneeFlat = kotlin.math.abs(leftHip.y() - leftKnee.y()) < 0.08f
+    val kneeAnkleFlat = kotlin.math.abs(leftKnee.y() - leftAnkle.y()) < 0.08f
+    val isLying = (shoulderHipFlat && hipKneeFlat && kneeAnkleFlat) || totalBodyHeight < 0.25f
+
+    if (isLying) return "Prone (Lying)"
+
+    // Normalize segment ratios
+    val shoulderToHipRatio = shoulderToHip / totalBodyHeight
+    val hipToKneeRatio = hipToKnee / totalBodyHeight
+    val kneeToAnkleRatio = kneeToAnkle / totalBodyHeight
+
+    return when {
+        // Tall, upright structure
+        shoulderToHipRatio > 0.28f && hipToKneeRatio > 0.25f && kneeToAnkleRatio > 0.25f ->
+            "Standing"
+
+        // Upper body tall but knees are bent/close to hips
+        shoulderToHipRatio > 0.28f && hipToKneeRatio < 0.20f && kneeToAnkleRatio < 0.25f ->
+            "Sitting"
+
+        else -> "Unclear"
+    }
 }
 
 
