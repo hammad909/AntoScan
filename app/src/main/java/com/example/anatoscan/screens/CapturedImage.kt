@@ -157,6 +157,7 @@ fun analyzeHands(context: Context, bitmap: Bitmap, onResult: (HandLandmarkerResu
     onResult(result)
 
     handLandmarker.close()
+
 }
 
 
